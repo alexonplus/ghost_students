@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 
 const getScoreColor = (score) => {
   if (score > 80) return '#4ade80';

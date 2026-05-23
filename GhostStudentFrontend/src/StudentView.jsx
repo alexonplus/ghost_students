@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiVideo, FiMic, FiShare, FiMessageSquare, FiXCircle } from 'react-icons/fi';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 const sessionId = 'Student-' + Math.floor(Math.random() * 1000);
 
 const StudentView = () => {
