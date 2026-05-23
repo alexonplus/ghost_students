@@ -9,5 +9,6 @@ namespace GhostStudentBackend.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<StudentSession> StudentSessions { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
