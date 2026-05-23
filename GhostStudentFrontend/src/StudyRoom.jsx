@@ -38,6 +38,13 @@ export default function StudyRoom({ roomId, sessionId }) {
   const [players, setPlayers] = useState([]);
   const [waiting, setWaiting] = useState(true);
   const [score, setScore] = useState(100);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(roomId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -88,7 +95,17 @@ export default function StudyRoom({ roomId, sessionId }) {
       {waiting && others.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#64748b', marginTop: '80px' }}>
           <p style={{ fontSize: '1.2rem' }}>⏳ Waiting for your friend to join...</p>
-          <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>Share the room code: <strong style={{ color: '#a5b4fc' }}>{roomId}</strong></p>
+          <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>Share the room code:</p>
+          <button
+            onClick={handleCopyCode}
+            style={{
+              marginTop: '16px', padding: '10px 24px', background: '#6366f1', color: '#fff',
+              border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '600',
+              cursor: 'pointer', transition: 'all 0.3s ease'
+            }}
+          >
+            {copied ? '✅ Copied!' : `📋 ${roomId}`}
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '24px', maxWidth: '800px', margin: '0 auto' }}>
