@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiVideo, FiMic, FiShare, FiMessageSquare, FiXCircle } from 'react-icons/fi';
 
-const API = 'https://localhost:7188';
-const sessionId = 'Student-' + Math.floor(Math.random() * 1000);
+const API = 'http://localhost:5126';
 
-const StudentView = () => {
+const StudentView = ({ username, onLogout }) => {
+  const sessionId = username;
   const [focusScore, setFocusScore] = useState(100);
   const [isDistracted, setIsDistracted] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -328,7 +328,10 @@ const StudentView = () => {
       )}
       {/* Main Content */}
       <main className="main-content">
-        <header className="centered-header">
+        <header className="centered-header" style={{ position: 'relative' }}>
+          <button onClick={onLogout} style={{ position: 'absolute', top: '0', right: '0', padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+            Logout
+          </button>
           <h1>GhostStudent</h1>
           <p>dont lose track</p>
         </header>

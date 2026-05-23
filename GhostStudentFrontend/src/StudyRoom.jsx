@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 
 const getScoreColor = (score) => {
   if (score > 80) return '#4ade80';
@@ -34,7 +34,8 @@ const ScoreCard = ({ player, isYou }) => (
   </div>
 );
 
-export default function StudyRoom({ roomId, sessionId }) {
+export default function StudyRoom({ roomId, username, onLogout }) {
+  const sessionId = username;
   const [players, setPlayers] = useState([]);
   const [waiting, setWaiting] = useState(true);
 
@@ -59,7 +60,10 @@ export default function StudyRoom({ roomId, sessionId }) {
   const others = players.filter(p => p.sessionId !== sessionId);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', padding: '40px 32px', color: '#fff' }}>
+    <div style={{ minHeight: '100vh', background: '#0f172a', padding: '40px 32px', color: '#fff', position: 'relative' }}>
+      <button onClick={onLogout} style={{ position: 'absolute', top: '20px', right: '20px', padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+        Logout
+      </button>
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>👥 Study Room</h1>
         <p style={{ color: '#64748b' }}>

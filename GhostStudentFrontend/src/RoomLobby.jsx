@@ -5,7 +5,7 @@ const generateRoomCode = () => {
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 };
 
-export default function RoomLobby({ onJoin }) {
+export default function RoomLobby({ onJoin, onLogout }) {
   const [joinCode, setJoinCode] = useState('');
   const [createdCode, setCreatedCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -32,6 +32,9 @@ export default function RoomLobby({ onJoin }) {
 
   return (
     <div style={styles.page}>
+      <button onClick={onLogout} style={{ position: 'absolute', top: '20px', right: '20px', padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+        Logout
+      </button>
       <div style={styles.card}>
         <h1 style={styles.title}>👥 Study Room</h1>
         <p style={styles.subtitle}>Study together, stay focused together</p>
