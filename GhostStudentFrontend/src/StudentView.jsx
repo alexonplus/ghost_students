@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiVideo, FiMic, FiShare, FiMessageSquare, FiXCircle } from 'react-icons/fi';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 
 const StudentView = ({ username, onLogout }) => {
   const sessionId = username;

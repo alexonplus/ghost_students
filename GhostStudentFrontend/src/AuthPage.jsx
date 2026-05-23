@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 
 export default function AuthPage({ onSuccess }) {
   const [tab, setTab] = useState('login');
