@@ -37,6 +37,7 @@ const ScoreCard = ({ player, isYou }) => (
 export default function StudyRoom({ roomId, sessionId }) {
   const [players, setPlayers] = useState([]);
   const [waiting, setWaiting] = useState(true);
+  const [score, setScore] = useState(100);
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -54,6 +55,23 @@ export default function StudyRoom({ roomId, sessionId }) {
     const interval = setInterval(fetchRoom, 3000);
     return () => clearInterval(interval);
   }, [roomId]);
+
+  useEffect(() => {
+    const heartbeat = setInterval(() => {
+      fetch(`${API}/api/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          score,
+          isPresent: !document.hidden,
+          roomId,
+        }),
+      }).catch(err => console.error('Heartbeat failed', err));
+    }, 5000);
+
+    return () => clearInterval(heartbeat);
+  }, [sessionId, score, roomId]);
 
   const me = players.find(p => p.sessionId === sessionId);
   const others = players.filter(p => p.sessionId !== sessionId);
