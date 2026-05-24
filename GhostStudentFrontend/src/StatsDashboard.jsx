@@ -6,6 +6,8 @@ const API = 'http://localhost:5126';
 export default function StatsDashboard({ username, onLogout }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -13,6 +15,18 @@ export default function StatsDashboard({ username, onLogout }) {
       onLogout();
       return;
     }
+
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API}/api/stats/categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (err) {
+        console.error('Categories fetch failed:', err);
+      }
+    };
 
     const fetchStats = async () => {
       try {
@@ -27,6 +41,7 @@ export default function StatsDashboard({ username, onLogout }) {
       }
     };
 
+    fetchCategories();
     fetchStats();
   }, []);
 
@@ -64,6 +79,21 @@ export default function StatsDashboard({ username, onLogout }) {
       <div style={styles.header}>
         <h1>📈 {username}'s Statistics</h1>
         <p>Your learning journey</p>
+      </div>
+
+      {/* Category Filter */}
+      <div style={styles.filterSection}>
+        <label style={{ marginRight: '12px', color: '#94a3b8' }}>Filter by category:</label>
+        <select
+          value={selectedCategory}
+          onChange={e => setSelectedCategory(parseInt(e.target.value))}
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155', background: '#1e293b', color: '#fff' }}
+        >
+          <option value={0}>All Categories</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Summary Cards */}
@@ -164,6 +194,13 @@ const styles = {
     color: '#fff',
     padding: '40px 32px',
     position: 'relative',
+  },
+  filterSection: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '32px',
+    gap: '12px',
   },
   logoutBtn: {
     position: 'absolute',

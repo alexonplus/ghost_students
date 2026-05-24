@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiVideo, FiMic, FiShare, FiMessageSquare, FiXCircle } from 'react-icons/fi';
+import ContentPlayer from './ContentPlayer';
 
 const API = 'http://localhost:5126';
 
@@ -21,8 +22,12 @@ const StudentView = ({ username, onLogout }) => {
   const [skillName, setSkillName] = useState('');
   const [tempSkill, setTempSkill] = useState('');
   const [levelUpMsg, setLevelUpMsg] = useState(false);
+  const [contentType, setContentType] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(1);
+  const [categories, setCategories] = useState([]);
+  const [fileContent, setFileContent] = useState(null);
   const isDistractedRef = useRef(false);
-  const isPlayingRef = useRef(false);
+  const isPlayingRef = useRef(true);
   const ytPlayer = useRef(null);
 
   const distractionInterval = useRef(null);
@@ -69,6 +74,14 @@ const StudentView = ({ username, onLogout }) => {
     clearInterval(alarmInterval.current);
   };
 
+  // Fetch categories on mount
+  useEffect(() => {
+    fetch(`${API}/api/stats/categories`)
+      .then(r => r.json())
+      .then(data => setCategories(data))
+      .catch(err => console.error('Failed to fetch categories:', err));
+  }, []);
+
   // Total session timer
   useEffect(() => {
     totalTimer.current = setInterval(() => {
@@ -110,9 +123,9 @@ const StudentView = ({ username, onLogout }) => {
     };
   }, [embedId]);
 
-  // XP gain — +1 every 3 seconds while focused AND video is playing
+  // XP gain — +1 every 3 seconds while focused AND content is playing
   useEffect(() => {
-    if (!embedId) return;
+    if (!contentType) return;
     const xpTimer = setInterval(() => {
       if (!isDistractedRef.current && isPlayingRef.current) {
         setXp(prev => {
@@ -128,7 +141,7 @@ const StudentView = ({ username, onLogout }) => {
       }
     }, 3000);
     return () => clearInterval(xpTimer);
-  }, [embedId]);
+  }, [contentType]);
 
   // Keep ref in sync so heartbeat always has latest score
   useEffect(() => {
@@ -238,38 +251,101 @@ const StudentView = ({ username, onLogout }) => {
     clearTimeout(quizTimeout.current);
     clearTimeout(popQuizTimeout.current);
 
-    if (skillName && embedId) {
-      const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+
+    if (token && userId && contentType && sessionStartTimeRef.current) {
       try {
         await fetch(`${API}/api/stats/end`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             userId: parseInt(userId),
             skillName,
-            startedAt: new Date(sessionStartTime.current).toISOString(),
+            startedAt: new Date(sessionStartTimeRef.current).toISOString(),
             finalScore: focusScore,
             totalXpEarned: xp,
             totalTimeSeconds: totalTime,
             distractionTimeSeconds: timeDistracted,
-          }),
+            category: selectedCategory
+          })
         });
       } catch (err) {
-        console.error('Failed to save session stats:', err);
+        console.error('Failed to save session:', err);
       }
     }
 
     setSessionEnded(true);
   };
 
+  const detectContentType = (url) => {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+    if (url.includes('vimeo.com')) return 'vimeo';
+    if (url.includes('spotify.com')) return 'spotify';
+    return null;
+  };
+
+  const extractYouTubeId = (url) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  };
+
+  const extractVimeoId = (url) => {
+    const match = url.match(/vimeo\.com\/(\d+)/);
+    return match ? match[1] : null;
+  };
+
   const handleVideoSubmit = (e) => {
     e.preventDefault();
     ensureAudio();
-    const match = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    if (match) {
-      setEmbedId(match[1]);
-      setSkillName(tempSkill || 'Skill');
+
+    if (!tempSkill) {
+      alert('Please enter a skill name');
+      return;
     }
+
+    const type = detectContentType(videoUrl);
+    if (!type) {
+      alert('Please enter a valid YouTube, Vimeo, or Spotify URL');
+      return;
+    }
+
+    let content = null;
+    if (type === 'youtube') {
+      content = extractYouTubeId(videoUrl);
+    } else if (type === 'vimeo') {
+      content = extractVimeoId(videoUrl);
+    } else if (type === 'spotify') {
+      content = videoUrl.split('/track/')[1]?.split('?')[0];
+    }
+
+    if (content) {
+      setContentType(type);
+      setSkillName(tempSkill);
+      setVideoUrl(content);
+      sessionStartTimeRef.current = Date.now();
+      isPlayingRef.current = true;
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    ensureAudio();
+    const file = e.target.files[0];
+    if (!file || !tempSkill) {
+      alert('Please enter a skill name');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const type = file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'text';
+      setContentType(type);
+      setSkillName(tempSkill);
+      setFileContent(evt.target.result);
+      sessionStartTimeRef.current = Date.now();
+      isPlayingRef.current = true;
+    };
+    reader.readAsText(file);
   };
 
   const formatTime = (seconds) => {
@@ -279,11 +355,7 @@ const StudentView = ({ username, onLogout }) => {
   };
 
   const FocusRing = ({ score }) => {
-    return (
-      <div>
-        <p className="score-text" style={{ color: getScoreColor(score) }}>{score}</p>
-      </div>
-    );
+    return <p style={{ color: getScoreColor(score), fontSize: '3rem', fontWeight: 'bold', margin: '0' }}>{score}</p>;
   };
 
 
@@ -360,12 +432,17 @@ const StudentView = ({ username, onLogout }) => {
         </header>
         
         <div className="video-feed">
-          {embedId ? (
-            <div id="yt-player" style={{ width: '100%', height: '100%', borderRadius: '8px' }} />
+          {contentType ? (
+            <ContentPlayer
+              content={contentType === 'video' || contentType === 'pdf' || contentType === 'text' ? fileContent : videoUrl}
+              contentType={contentType}
+              onReady={() => { isPlayingRef.current = true; }}
+              onEnded={() => { isPlayingRef.current = false; }}
+            />
           ) : (
             <div className="video-placeholder">
-              <p>Paste a YouTube link to start</p>
-              <form onSubmit={handleVideoSubmit} style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+              <p>Select a skill category and paste a link or upload a file</p>
+              <form onSubmit={handleVideoSubmit} style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
                 <input
                   type="text"
                   placeholder="Skill name (e.g. C# OOP)"
@@ -373,7 +450,16 @@ const StudentView = ({ username, onLogout }) => {
                   onChange={e => setTempSkill(e.target.value)}
                   style={{ padding: '8px 12px', borderRadius: '6px', border: 'none', width: '300px', color: '#000' }}
                 />
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <select
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(parseInt(e.target.value))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: 'none', width: '300px', color: '#000' }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name} ({cat.xpMultiplier}x XP)</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                   <input
                     type="text"
                     placeholder="https://youtube.com/watch?v=..."
@@ -382,8 +468,16 @@ const StudentView = ({ username, onLogout }) => {
                     style={{ padding: '8px 12px', borderRadius: '6px', border: 'none', width: '300px', color: '#000' }}
                   />
                   <button type="submit" style={{ padding: '8px 16px', borderRadius: '6px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                    Play
+                    Play Link
                   </button>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8' }}>Or upload a file:</span>
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: 'none' }}
+                  />
                 </div>
               </form>
             </div>
@@ -406,7 +500,7 @@ const StudentView = ({ username, onLogout }) => {
           <FocusRing score={focusScore} />
           {isDistracted && <p className="distracted-warning">You seem distracted!</p>}
         </div>
-        {embedId && (
+        {contentType && (
           <div style={{ marginTop: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#a78bfa', fontWeight: 'bold', fontSize: '0.85rem' }}>⚔️ {skillName}</span>
