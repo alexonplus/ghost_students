@@ -4,6 +4,7 @@ import TeacherDashboard from './TeacherDashboard';
 import RoomLobby from './RoomLobby';
 import StudyRoom from './StudyRoom';
 import AuthPage from './AuthPage';
+import StatsDashboard from './StatsDashboard';
 import './index.css';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
   if (view === 'teacher') return <TeacherDashboard onLogout={handleLogout} />;
   if (view === 'room-lobby') return <RoomLobby onJoin={handleJoinRoom} onLogout={handleLogout} />;
   if (view === 'study-room') return <StudyRoom roomId={roomId} username={username} onLogout={handleLogout} />;
+  if (view === 'stats') return <StatsDashboard username={username} onLogout={handleLogout} />;
 
   return (
     <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
@@ -73,6 +75,9 @@ function App() {
           </button>
           <button onClick={() => setView('teacher')} style={btnStyle('#7c3aed')}>
             📊 Teacher View
+          </button>
+          <button onClick={() => setView('stats')} style={btnStyle('#10b981')}>
+            📈 My Stats
           </button>
         </div>
       </div>

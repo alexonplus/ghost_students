@@ -5,6 +5,7 @@ const API = 'http://localhost:5126';
 
 const StudentView = ({ username, onLogout }) => {
   const sessionId = username;
+  const sessionStartTime = useRef(Date.now());
   const [focusScore, setFocusScore] = useState(100);
   const [isDistracted, setIsDistracted] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -230,12 +231,34 @@ const StudentView = ({ username, onLogout }) => {
     return '#facc15'; // yellow-400
   };
 
-  const handleEndSession = () => {
+  const handleEndSession = async () => {
     clearInterval(totalTimer.current);
     clearInterval(distractionInterval.current);
     clearInterval(distractionTimer.current);
     clearTimeout(quizTimeout.current);
     clearTimeout(popQuizTimeout.current);
+
+    if (skillName && embedId) {
+      const userId = localStorage.getItem('userId');
+      try {
+        await fetch(`${API}/api/stats/end`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: parseInt(userId),
+            skillName,
+            startedAt: new Date(sessionStartTime.current).toISOString(),
+            finalScore: focusScore,
+            totalXpEarned: xp,
+            totalTimeSeconds: totalTime,
+            distractionTimeSeconds: timeDistracted,
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to save session stats:', err);
+      }
+    }
+
     setSessionEnded(true);
   };
 
