@@ -10,5 +10,6 @@ namespace GhostStudentBackend.Data
 
         public DbSet<StudentSession> StudentSessions { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<SessionHistory> SessionHistories { get; set; }
     }
 }
