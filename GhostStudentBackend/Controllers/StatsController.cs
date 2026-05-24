@@ -16,6 +16,23 @@ namespace GhostStudentBackend.Controllers
             _context = context;
         }
 
+        // GET: api/stats/categories
+        [HttpGet("categories")]
+        public IActionResult GetCategories()
+        {
+            var categories = new[]
+            {
+                new { id = 1, name = "Programming", xpMultiplier = 1.5 },
+                new { id = 2, name = "Languages", xpMultiplier = 1.3 },
+                new { id = 3, name = "Sports", xpMultiplier = 1.0 },
+                new { id = 4, name = "Music", xpMultiplier = 1.2 },
+                new { id = 5, name = "Art", xpMultiplier = 1.1 },
+                new { id = 6, name = "Science", xpMultiplier = 1.4 },
+                new { id = 7, name = "Other", xpMultiplier = 1.0 }
+            };
+            return Ok(categories);
+        }
+
         // POST: api/stats/end
         [HttpPost("end")]
         public async Task<IActionResult> EndSession([FromBody] EndSessionRequest request)
@@ -27,6 +44,9 @@ namespace GhostStudentBackend.Controllers
             if (user == null)
                 return NotFound("User not found");
 
+            int xpMultiplier = GetXpMultiplierForCategory(request.Category);
+            int finalXp = (int)(request.TotalXpEarned * xpMultiplier);
+
             var session = new SessionHistory
             {
                 UserId = request.UserId,
@@ -34,15 +54,17 @@ namespace GhostStudentBackend.Controllers
                 StartedAt = request.StartedAt,
                 EndedAt = DateTime.UtcNow,
                 FinalScore = request.FinalScore,
-                TotalXpEarned = request.TotalXpEarned,
+                TotalXpEarned = finalXp,
                 TotalTimeSeconds = request.TotalTimeSeconds,
-                DistractionTimeSeconds = request.DistractionTimeSeconds
+                DistractionTimeSeconds = request.DistractionTimeSeconds,
+                Category = request.Category,
+                XpMultiplier = xpMultiplier
             };
 
             _context.SessionHistories.Add(session);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Session saved", sessionHistoryId = session.Id });
+            return Ok(new { message = "Session saved", sessionHistoryId = session.Id, xpEarned = finalXp });
         }
 
         // GET: api/stats/{userId}
@@ -122,6 +144,20 @@ namespace GhostStudentBackend.Controllers
                 dailyScores = dailyScores
             });
         }
+
+        private int GetXpMultiplierForCategory(int category)
+        {
+            return category switch
+            {
+                1 => (int)1.5, // Programming
+                2 => (int)1.3, // Languages
+                3 => 1,        // Sports
+                4 => (int)1.2, // Music
+                5 => (int)1.1, // Art
+                6 => (int)1.4, // Science
+                _ => 1         // Other
+            };
+        }
     }
 
     public class EndSessionRequest
@@ -133,5 +169,6 @@ namespace GhostStudentBackend.Controllers
         public int TotalXpEarned { get; set; }
         public int TotalTimeSeconds { get; set; }
         public int DistractionTimeSeconds { get; set; }
+        public int Category { get; set; }
     }
 }
