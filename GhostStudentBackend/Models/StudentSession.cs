@@ -7,6 +7,7 @@
         public int Score { get; set; }
         public bool IsPresent { get; set; }
         public DateTime LastUpdated { get; set; }
+        public string RoomId { get; set; } = string.Empty;
 
     }
 }

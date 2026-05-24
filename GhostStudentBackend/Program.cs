@@ -1,6 +1,10 @@
 
 using Microsoft.EntityFrameworkCore;
 using GhostStudentBackend.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace GhostStudentBackend
 {
@@ -10,56 +14,60 @@ namespace GhostStudentBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
-            // Add CORS policy to allow requests from the React app
+            // Add CORS policy
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp", builder =>
                 {
-                    builder.WithOrigins("http://localhost:5173") // React development server URL
+                    builder.WithOrigins("http://localhost:5173", "http://localhost:5126", "https://localhost:7188")
                            .AllowAnyHeader()
                            .AllowAnyMethod();
                 });
             });
 
-            // Add Swagger services
+            // Add JWT Authentication
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = key,
+                        ValidateIssuer = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidateAudience = true,
+                        ValidAudience = jwtSettings["Audience"],
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Register the DbContext with the dependency injection container
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
-
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(); // This creates the interactive webpage at /swagger
-            }
-
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
+                app.UseSwaggerUI();
                 app.MapOpenApi();
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
-            app.UseCors("AllowReactApp"); // Apply the CORS policy
-
+            app.UseCors("AllowReactApp");
             app.MapControllers();
-
             app.Run();
         }
     }

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 
-const API = 'https://localhost:7188';
+const API = 'http://localhost:5126';
 
-export default function TeacherDashboard() {
+export default function TeacherDashboard({ onLogout }) {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
     const fetchRadar = async () => {
       try {
-        const res = await fetch(`${API}/api/session/radar`);
+        const res = await fetch(`${API}/api/radar`);
         const data = await res.json();
         setStudents(data);
       } catch (err) {
@@ -28,7 +28,10 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-4xl mx-auto" style={{ position: 'relative' }}>
+      <button onClick={onLogout} style={{ position: 'absolute', top: '20px', right: '20px', padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+        Logout
+      </button>
       <h1 className="text-3xl font-bold mb-6">Live Classroom Radar</h1>
       {students.length === 0 && (
         <p className="text-gray-500">No active students yet...</p>
