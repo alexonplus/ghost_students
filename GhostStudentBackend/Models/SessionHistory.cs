@@ -12,5 +12,7 @@ namespace GhostStudentBackend.Models
         public int TotalXpEarned { get; set; }
         public int TotalTimeSeconds { get; set; }
         public int DistractionTimeSeconds { get; set; }
+        public int Category { get; set; }
+        public int XpMultiplier { get; set; }
     }
 }

@@ -6,7 +6,7 @@ const API = 'http://localhost:5126';
 
 const StudentView = ({ username, onLogout }) => {
   const sessionId = username;
-  const sessionStartTime = useRef(Date.now());
+  const sessionStartTimeRef = useRef(Date.now());
   const [focusScore, setFocusScore] = useState(100);
   const [isDistracted, setIsDistracted] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -38,6 +38,7 @@ const StudentView = ({ username, onLogout }) => {
   const focusScoreRef = useRef(100);
   const audioCtx = useRef(null);
   const alarmInterval = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Create AudioContext on first user interaction so browser allows sound
   const ensureAudio = () => {
@@ -151,7 +152,7 @@ const StudentView = ({ username, onLogout }) => {
   // Heartbeat — POST to backend every 5 seconds
   useEffect(() => {
     const heartbeat = setInterval(() => {
-      fetch(`${API}/api/session/heartbeat`, {
+      fetch(`${API}/api/heartbeat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -320,10 +321,10 @@ const StudentView = ({ username, onLogout }) => {
     }
 
     if (content) {
+      sessionStartTimeRef.current = Date.now();
       setContentType(type);
       setSkillName(tempSkill);
       setVideoUrl(content);
-      sessionStartTimeRef.current = Date.now();
       isPlayingRef.current = true;
     }
   };
@@ -331,21 +332,28 @@ const StudentView = ({ username, onLogout }) => {
   const handleFileUpload = (e) => {
     ensureAudio();
     const file = e.target.files[0];
-    if (!file || !tempSkill) {
+    if (!file) {
+      alert('Please select a file');
+      return;
+    }
+    if (!tempSkill) {
       alert('Please enter a skill name');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const type = file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'text';
-      setContentType(type);
-      setSkillName(tempSkill);
-      setFileContent(evt.target.result);
-      sessionStartTimeRef.current = Date.now();
-      isPlayingRef.current = true;
-    };
-    reader.readAsText(file);
+    const type = file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'text';
+    const url = URL.createObjectURL(file);
+
+    console.log('File upload:', { fileName: file.name, type, url, skill: tempSkill });
+
+    sessionStartTimeRef.current = Date.now();
+    setContentType(type);
+    setSkillName(tempSkill);
+    setFileContent(url);
+    isPlayingRef.current = true;
+
+    // Reset file input
+    e.target.value = '';
   };
 
   const formatTime = (seconds) => {
@@ -471,13 +479,16 @@ const StudentView = ({ username, onLogout }) => {
                     Play Link
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                   <span style={{ color: '#94a3b8' }}>Or upload a file:</span>
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: 'none' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="file"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.txt,.mp4,.mov,.avi"
+                      style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155', background: '#1e293b', color: '#e2e8f0', cursor: 'pointer', flex: 1 }}
+                    />
+                  </div>
                 </div>
               </form>
             </div>
