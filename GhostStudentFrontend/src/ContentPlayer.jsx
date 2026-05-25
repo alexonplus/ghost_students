@@ -15,7 +15,11 @@ export default function ContentPlayer({ content, contentType, onReady, onEnded }
     return <SpotifyPlayer trackUri={content} />;
   }
 
-  if (contentType === 'pdf' || contentType === 'text') {
+  if (contentType === 'pdf') {
+    return <PDFViewer src={content} />;
+  }
+
+  if (contentType === 'text') {
     return <TextViewer content={content} />;
   }
 
@@ -32,36 +36,21 @@ export default function ContentPlayer({ content, contentType, onReady, onEnded }
 
 function YouTubePlayer({ embedId, onReady, onEnded }) {
   useEffect(() => {
-    if (!embedId) return;
+    onReady?.();
+  }, [onReady]);
 
-    const script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    document.body.appendChild(script);
-
-    window.onYouTubeIframeAPIReady = () => {
-      new window.YT.Player('youtube-player', {
-        height: '390',
-        width: '640',
-        videoId: embedId,
-        events: {
-          onReady: onReady,
-          onStateChange: (event) => {
-            if (event.data === window.YT.PlayerState.ENDED) {
-              onEnded?.();
-            }
-          }
-        }
-      });
-    };
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [embedId, onReady, onEnded]);
-
-  return <div id="youtube-player" style={{ maxWidth: '100%' }} />;
+  return (
+    <iframe
+      width="100%"
+      height="500px"
+      src={`https://www.youtube.com/embed/${embedId}`}
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      style={{ maxWidth: '100%', borderRadius: '8px' }}
+      onLoad={() => onReady?.()}
+    />
+  );
 }
 
 function VimeoPlayer({ videoId, onReady, onEnded }) {
@@ -96,10 +85,33 @@ function SpotifyPlayer({ trackUri }) {
   );
 }
 
+function PDFViewer({ src }) {
+  return (
+    <object
+      data={src}
+      type="application/pdf"
+      width="100%"
+      height="600px"
+      style={{ borderRadius: '8px', border: '1px solid #334155', background: '#fff' }}
+    >
+      <div style={{
+        padding: '40px',
+        background: '#1e293b',
+        borderRadius: '8px',
+        textAlign: 'center',
+        color: '#e2e8f0'
+      }}>
+        <p>PDF cannot be displayed in this browser.</p>
+        <a href={src} download style={{ color: '#3b82f6', textDecoration: 'underline' }}>Download PDF</a>
+      </div>
+    </object>
+  );
+}
+
 function TextViewer({ content }) {
   return (
-    <div style={{ padding: '20px', background: '#1e293b', borderRadius: '8px', maxHeight: '400px', overflowY: 'auto', color: '#e2e8f0' }}>
-      <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', fontFamily: 'monospace' }}>
+    <div style={{ padding: '20px', background: '#1e293b', borderRadius: '8px', maxHeight: '600px', overflowY: 'auto', color: '#e2e8f0' }}>
+      <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', fontFamily: 'monospace', fontSize: '0.9rem' }}>
         {content}
       </pre>
     </div>
@@ -113,10 +125,10 @@ function VideoPlayer({ src, onReady, onEnded }) {
 
   return (
     <video
-      width="640"
-      height="390"
+      width="100%"
+      height="500px"
       controls
-      style={{ maxWidth: '100%', background: '#000' }}
+      style={{ maxWidth: '100%', background: '#000', borderRadius: '8px' }}
       onEnded={onEnded}
     >
       <source src={src} type="video/mp4" />

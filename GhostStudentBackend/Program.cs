@@ -22,7 +22,7 @@ namespace GhostStudentBackend
             {
                 options.AddPolicy("AllowReactApp", builder =>
                 {
-                    builder.WithOrigins("http://localhost:5173", "http://localhost:5126", "https://localhost:7188")
+                    builder.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5126", "https://localhost:7188")
                            .AllowAnyHeader()
                            .AllowAnyMethod();
                 });
